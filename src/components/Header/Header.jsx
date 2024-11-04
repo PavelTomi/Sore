@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import styles from "../../styles/styles/Header.module.css";
 
@@ -10,23 +10,33 @@ import LOGO from "../../images/logo.svg";
 import AVATAR from "../../images/avatar.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleForm } from "../../features/user/userSlice";
-
+import { useGetProductQuery } from "../../features/api/apiSlice";
 
 const Header = () => {
-const dispatch = useDispatch();
-const { currentUser } = useSelector(({ user }) => user);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState("");
 
-const [values, setValues] = useState({name:"Guest",avatar : AVATAR})
+  const { currentUser, cart } = useSelector(({ user }) => user);
 
-useEffect(() => {
-if(!currentUser) return;
+  const [values, setValues] = useState({ name: "Guest", avatar: AVATAR });
 
-setValues(currentUser);
-},[currentUser]);
+  const { date, isLoading } = useGetProductQuery({ title: searchValue });
 
-const handleClick = () => {
-  if(!currentUser) dispatch(toggleForm(true))
-};
+  useEffect(() => {
+    if (!currentUser) return;
+
+    setValues(currentUser);
+  }, [currentUser]);
+
+  const handleClick = () => {
+    if (!currentUser) dispatch(toggleForm(true));
+    else navigate(ROUTES.PROFILE);
+  };
+
+  const handleSearch = ({ target: { value } }) => {
+    setSearchValue(value);
+  };
 
   return (
     <div className={styles.header}>
@@ -57,12 +67,35 @@ const handleClick = () => {
               name="search"
               placeholder="search for anything..."
               autoComplete="off"
-              onChange={() => {}}
-              value=""
+              onChange={handleSearch}
+              value={searchValue}
             />
           </div>
 
-          {false && <div className={styles.box}></div>}
+          {searchValue && (
+            <div className={styles.box}>
+              {isLoading
+                ? "isLoading"
+                : !DataTransfer.length
+                ? "No results"
+                : date.map(({ title, images, id }) => {
+                    return (
+                      <link
+                        key={id}
+                        onClick={() => ""}
+                        className={styles.item}
+                        to={`/products/${id}`}
+                      >
+                        <div
+                          className={styles.images}
+                          style={{ backgroundImage: `url(${images[0]})` }}
+                        />
+                        <div className={styles.title}>{title}</div>
+                      </link>
+                    );
+                  })}
+            </div>
+          )}
         </form>
 
         <div className={styles.account}>
@@ -76,7 +109,7 @@ const handleClick = () => {
             <svg className={styles["icon-cart"]}>
               <use xlinkHref={`${process.env.PUBLIC_URL}/sprite.svg#bag`} />
             </svg>
-            <span className={styles.count}>2</span>
+            {!!cart.length && <span className={styles.count}>{cart.length}</span>}
           </Link>
         </div>
       </div>
